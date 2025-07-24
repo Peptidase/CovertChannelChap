@@ -1,0 +1,109 @@
+services:
+  router:
+    image: alpine:latest
+    container_name: router
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    command: >
+      sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward &&
+      iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o eth0 -j MASQUERADE &&
+      iptables -t nat -A POSTROUTING -s 10.20.20.0/24 -o eth0 -j MASQUERADE &&
+      iptables -A FORWARD -s 10.10.10.0/24 -d 10.20.20.0/24 -j DROP &&
+      sleep infinity"
+    networks:
+      dmz_net:
+        ipv4_address: 10.10.10.1
+      internal_net:
+        ipv4_address: 10.20.20.1
+
+  dmz_srv:
+    image: alpine:latest
+    container_name: dmz_srv
+    cap_add:
+      - NET_ADMIN
+    command: >
+      sh -c "ip route del default &&
+      ip route add default via 10.10.10.1 &&
+      sleep infinity"
+    networks:
+      dmz_net:
+        ipv4_address: 10.10.10.10
+
+  internal_srv:
+    image: alpine:latest
+    container_name: internal_srv
+    cap_add:
+      - NET_ADMIN
+    command: >
+      sh -c "ip route del default &&
+      ip route add default via 10.20.20.1 &&
+      sleep infinity"
+    networks:
+      internal_net:
+        ipv4_address: 10.20.20.10
+
+  vyos-fw:
+    build:
+      context: .
+      dockerfile: Dockerfile.vyos
+    privileged: true
+    networks:
+      lan:
+        ipv4_address: 192.168.3.1
+      dmz:
+        ipv4_address: 172.16.50.1
+      wan:
+        ipv4_address: 10.0.80.1
+    # config.boot is baked into the image for auto-configuration
+
+  # Example internal LAN host
+  lan-host:
+    image: alpine
+    command: sleep infinity
+    networks:
+      lan:
+        ipv4_address: 192.168.3.10
+
+  # Example DMZ host
+  dmz-host:
+    image: alpine
+    command: sleep infinity
+    networks:
+      dmz:
+        ipv4_address: 172.16.50.10
+
+  # Example WAN/Internet router
+  internet-router:
+    image: alpine
+    command: sleep infinity
+    networks:
+      wan:
+        ipv4_address: 10.0.80.254
+
+networks:
+  dmz_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.10.0/24
+  internal_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.20.20.0/24
+  lan:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.3.0/24
+  dmz:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.50.0/24
+  wan:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.80.0/24
