@@ -1,27 +1,29 @@
-version: '3.8'
-
 services:
   machine1:
     image: alpine
-    container_name: machine1
     command: ["sleep", "infinity"]
     networks:
-      - net
+      - net1
 
   machine2:
     image: alpine
-    container_name: machine2
     command: ["sleep", "infinity"]
     networks:
-      - net
+      - net1
+      - net2
 
   machine3:
     image: alpine
-    container_name: machine3
     command: ["sleep", "infinity"]
     networks:
-      - net
+      - net2
+      - internet
 
 networks:
-  net:
+  net1:
     driver: bridge
+  net2:
+    driver: bridge
+  internet:
+    driver: bridge
+    # By default, bridge networks allow internet access

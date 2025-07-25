@@ -2,18 +2,9 @@ import socketserver
 import requests
 import http.server
 
-
-
-
-
 # Detect the http google search request and then edit and resend the webpage
 
-
-
-
-
-
-PORT = 8080
+PORT = 80
 TARGET_HOST = "www.google.com"  # Change to the website you want to intercept
 
 class ProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):

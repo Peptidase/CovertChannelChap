@@ -1,4 +1,0 @@
-FROM vyos/vyos-build:current
-
-# Copy your VyOS config.boot file into the image
-COPY config.boot /config/config.boot
