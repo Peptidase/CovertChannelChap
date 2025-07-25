@@ -1,0 +1,25 @@
+services:
+  client:
+    build: ./client
+    networks:
+      internal_net:
+        ipv4_address: 10.200.0.2
+
+  proxy:
+    build: ./proxy
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./captures:/captures
+    networks:
+      internal_net:
+        ipv4_address: 10.200.0.3
+      default: {}
+
+networks:
+  internal_net:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.200.0.0/24
