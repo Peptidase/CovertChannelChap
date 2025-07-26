@@ -1,8 +1,16 @@
 #!/bin/bash
 set -e
 
-ip route del default || true
-ip route add default via 172.30.0.1
+TS=$(date +%Y%m%d_%H%M%S)
 
-echo "Client ready. Default gateway set to 172.30.0.1"
+# Configure route via proxy
+ip route del default || true
+ip route add default via 10.200.0.3
+
+# Start tcpdump capture
+tcpdump -U -i eth0 -w /captures/client_traffic_${TS}.pcap &
+
+# Start XFCE + VNC stack (preconfigured in base image)
+echo "[+] Starting XFCE desktop with noVNC"
+exec /usr/bin/vnc_startup &
 tail -f /dev/null

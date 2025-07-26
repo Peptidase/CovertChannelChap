@@ -1,25 +1,34 @@
 services:
   client:
     build: ./client
-    networks:
-      internal_net:
-        ipv4_address: 10.200.0.2
-
-  proxy:
-    build: ./proxy
     cap_add:
       - NET_ADMIN
     volumes:
       - ./captures:/captures
     networks:
       internal_net:
+        ipv4_address: 10.200.0.2
+    ports:
+      - "5901:5901"   # VNC
+      - "6080:6080"   # noVNC web client
+
+  proxy:
+    build: ./proxy
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    volumes:
+      - ./captures:/captures
+    networks:
+      internal_net:
         ipv4_address: 10.200.0.3
-      default: {}
+      default: {}  # internet access
 
 networks:
   internal_net:
     driver: bridge
-    internal: true
     ipam:
       config:
         - subnet: 10.200.0.0/24

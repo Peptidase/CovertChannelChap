@@ -35,12 +35,19 @@ This guide provides step-by-step instructions to build, start, and test the netw
     ping -c 2 8.8.8.8
     ```
 
-4. **HTTP Connectivity Test**
+    Can also try and curl to see if that works
 
-    Test HTTP access to an external website (e.g., google.com):
-
-    ```sh
-    curl http://google.com
+    ```
+    docker exec -it network_emulation-client-1 bash
+    curl http://www.google.com/search?q=test
     ```
 
-These commands help ensure the network emulation environment is running correctly and the client container has internet access.
+4. **Reading PCAP files**
+
+    In order to populate the captures folder you need to run the following command:
+
+    ```
+    docker compose stop
+    ```
+
+    This will run the SIGKill process on the tcp dump processes which will put them into their shared folder which should be in the `network_emulation/captures` folder.

@@ -1,10 +1,12 @@
 #!/bin/bash
-# Cleanup Docker Compose resources
 
-docker compose down --volumes --remove-orphans
-docker container prune -f
-docker image prune -a -f
-docker volume prune -f
+
+# Stop and remove all Docker containers
+docker compose down
+docker rm -f $(docker ps -aq) 2>/dev/null || true
+
+
+# Remove all Docker networks (except default ones)
 docker network prune -f
 
-docker network ls -q | xargs -r docker network rm
+# Note: Volumes are NOT removed
