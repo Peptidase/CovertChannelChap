@@ -1,14 +1,14 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip iproute2 iptables tcpdump && \
+    apt-get install -y python3 python3-pip iproute2 iptables tcpdump net-tools iputils-ping dnsutils && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y python3-pip
+
 
 COPY requirements.txt ./requirements.txt
 
-RUN pip3 install -r ./requirements.txt
+RUN pip3 install --no-cache-dir -r ./requirements.txt
 
 # Create directories for captures and source
 RUN mkdir -p /opt/proxy /captures

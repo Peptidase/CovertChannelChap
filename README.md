@@ -33,3 +33,24 @@ This project implements a proof-of-concept covert channel using HTTP traffic. Th
 - Proof-of-concept code for the HTTP covert channel
 - README describing setup and operation
 - PCAP demonstrating message injection and extraction
+
+
+## How to Use (Docker)
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/phantom-nexus-chameleonte.git
+   cd phantom-nexus-chameleonte
+   ```
+
+2. **Build and Run the Docker Compose File**
+
+3. **Connect to the virtual machine interface**
+   
+4. **Trigger Covert Channel**
+   - Perform a Google search using the trigger keywords defined in the code.
+
+5. **Extract Messages**
+   - Use the provided decoding script to parse returned HTML files and extract covert messages from the `<DOCTYPE>` tag.
+
+**Note:** For demonstration, sample PCAP files and extraction scripts are included in the repository.

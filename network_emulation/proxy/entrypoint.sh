@@ -4,16 +4,23 @@ set -e
 echo "[+] Enabling IP forwarding"
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
-# Setup NAT for outbound traffic
-iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
+# Show current DNS configuration for debugging
+echo "[+] Current DNS configuration:"
+cat /etc/resolv.conf
 
-# Redirect port 80 traffic to Python proxy running on 8080
-iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080
+# Flush old rules to avoid duplicates
+iptables -F
+iptables -t nat -F
 
-# Start packet captures on both interfaces
-TS=$(date +%Y%m%d_%H%M%S)
-tcpdump -U -i eth0 -w /captures/proxy_internal_${TS}.pcap &
-tcpdump -U -i eth1 -w /captures/proxy_external_${TS}.pcap &
+# Masquerade outbound traffic for internet access
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
-echo "[+] Starting combined transparent proxy and HTTP interceptor"
+# Accept forwarding between interfaces
+iptables -A FORWARD -i eth0 -j ACCEPT
+iptables -A FORWARD -o eth0 -j ACCEPT
+
+# Redirect all port 80 traffic to local Python proxy
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 80
+
+echo "[+] Starting covert channel transparent proxy"
 python3 /opt/proxy/proxy.py

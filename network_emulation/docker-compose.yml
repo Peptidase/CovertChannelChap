@@ -1,11 +1,12 @@
+
 services:
   client:
     build: ./client
     cap_add:
-      - NET_ADMIN  
-    privileged: true        # Simplest way to allow forwarding
+      - NET_ADMIN
+    privileged: true
     volumes:
-      -  ../python/covert_client/:/opt/client  # Live bind mount for client source
+      - ../python/covert_client/:/opt/client
       - ./captures:/captures
     command: /entrypoint.sh
     networks:
@@ -19,11 +20,12 @@ services:
     build: ./proxy
     cap_add:
       - NET_ADMIN
-      - SYS_ADMIN  
-    privileged: true        # Simplest way to allow forwarding
+      - SYS_ADMIN
+    privileged: true
     volumes:
-      -  ../python/covert_proxy:/opt/proxy  # Live bind mount for proxy source
+      - ../python/covert_proxy:/opt/proxy
       - ./captures:/captures
+      - ./resolv.conf:/etc/resolv.conf:ro   # Mount a fixed resolv.conf
     command: /entrypoint.sh
     networks:
       internal_net:
