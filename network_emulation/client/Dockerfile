@@ -7,6 +7,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Expose ports (VNC + noVNC)
+
+RUN apt-get update && apt-get install -y python3-pip
+
+COPY requirements.txt ./requirements.txt
+
+RUN pip3 install -r ./requirements.txt
+
 EXPOSE 5901 6080
 
 COPY entrypoint.sh /entrypoint.sh
