@@ -82,6 +82,7 @@ def handle_client(client_socket):
             else:
                 header_bytes, body = raw_response, b""
 
+            
             # Inject covert command and check for covert response
             body = inject_command(body, "pong!")
 
