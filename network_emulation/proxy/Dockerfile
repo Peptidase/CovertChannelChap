@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip iproute2 iptables tcpdump net-tools iputils-ping dnsutils && \
+    apt-get install -y python3 python3-pip iproute2 iptables tcpdump net-tools iputils-ping dnsutils libnfnetlink-dev libnetfilter-queue-dev && \
     rm -rf /var/lib/apt/lists/*
 
 

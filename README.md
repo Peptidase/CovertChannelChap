@@ -1,56 +1,53 @@
 # Operation Phantom Nexus - Chameleonte
 
-The following repository contains the solution to the challenge problem.
+## Quick Start Guide
 
-## Covert Channel Overview
+This project demonstrates a covert channel using HTTP traffic and a transparent proxy.
 
-This project implements a proof-of-concept covert channel using HTTP traffic. The channel leverages a transparent proxy positioned inline with network traffic to intercept Google search requests and responses. When the proxy detects a search request matching predefined trigger conditions, it modifies the server’s HTTP response in-flight and embeds an encoded message inside the `<DOCTYPE>` tag of the returned HTML page. The modified page is then delivered to the client without disrupting normal browsing behavior.
+### 1. Clone the Repository
 
-## Methods Used
+```bash
+git clone https://github.com/yourusername/phantom-nexus-chameleonte.git
+cd phantom-nexus-chameleonte
+```
 
-1. **Transparent HTTP Proxy**  
-   A custom proxy operates inline with outbound and inbound HTTP traffic. It inspects each request and response without requiring client-side configuration.
+### 2. Build and Start the Network
 
-2. **Trigger Detection**  
-   The proxy monitors all HTTP requests to the Google domain. When a search request matches specific keywords or patterns, it flags the session for covert message injection.
+```bash
+cd network_emulation
+docker compose up --build
+```
 
-3. **Payload Injection**  
-   The proxy intercepts the corresponding HTTP response and parses the HTML. It encodes a covert message and embeds it within the `<DOCTYPE>` declaration. This approach avoids altering visible page content and minimizes detection risk.
+This sets up the client and proxy containers on a virtual network.
 
-4. **Message Extraction**  
-   A separate decoding script reads the modified HTML, parses the `<DOCTYPE>` tag, and extracts the covert message. This can be run on the client side or by an operator collecting returned pages.
+### 3. Access the Client VM
 
-5. **Traffic Camouflage**  
-   The covert channel hides within normal web browsing patterns, using HTTP’s ubiquity to blend with legitimate network traffic and avoid triggering simple anomaly-based detection.
+Open a shell in the running client container:
 
-## Requirements
+```bash
+docker exec -it client /bin/bash
+```
 
-- Python 3.10+
-- Docker For testing
+### 4. Run the Covert Channel Script
 
-## Deliverables
+Navigate to the client script directory:
 
-- Proof-of-concept code for the HTTP covert channel
-- README describing setup and operation
-- PCAP demonstrating message injection and extraction
+```bash
+cd /opt/client
+python3 client.py
+```
 
+Enter your covert message when prompted. The proxy will intercept your Google search, inject a hidden response, and the client will extract it.
 
-## How to Use (Docker)
+### 5. Stopping and Cleaning Up
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/yourusername/phantom-nexus-chameleonte.git
-   cd phantom-nexus-chameleonte
-   ```
+To stop and clean up the environment:
 
-2. **Build and Run the Docker Compose File**
+```bash
+docker compose down
+./cleanup.sh
+```
 
-3. **Connect to the virtual machine interface**
-   
-4. **Trigger Covert Channel**
-   - Perform a Google search using the trigger keywords defined in the code.
+---
 
-5. **Extract Messages**
-   - Use the provided decoding script to parse returned HTML files and extract covert messages from the `<DOCTYPE>` tag.
-
-**Note:** For demonstration, sample PCAP files and extraction scripts are included in the repository.
+**Note:** PCAP files and extraction scripts are provided for demonstration and analysis.

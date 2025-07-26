@@ -14,7 +14,7 @@ def send_google_search(query):
     """
     # Build a minimal HTTP request manually
     request = (
-    "GET /search?q={} HTTP/1.1\r\n"
+    "GET /search?q=What+is+{}+? HTTP/1.1\r\n"
     "Host: www.google.com\r\n"
     "Connection: close\r\n\r\n"
     ).format(query)

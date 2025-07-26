@@ -4,23 +4,25 @@ set -e
 echo "[+] Enabling IP forwarding"
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
-# Show current DNS configuration for debugging
-echo "[+] Current DNS configuration:"
+echo "[+] Current DNS config:"
 cat /etc/resolv.conf
 
-# Flush old rules to avoid duplicates
+# Flush rules
 iptables -F
 iptables -t nat -F
 
-# Masquerade outbound traffic for internet access
+# Masquerade for internet access
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
-# Accept forwarding between interfaces
-iptables -A FORWARD -i eth0 -j ACCEPT
-iptables -A FORWARD -o eth0 -j ACCEPT
+# Send HTTP packets to NFQUEUE instead of redirecting to a local socket
+iptables -I FORWARD -p tcp --dport 80 -j NFQUEUE --queue-num 1
+iptables -I FORWARD -p tcp --sport 80 -j NFQUEUE --queue-num 1
 
-# Redirect all port 80 traffic to local Python proxy
-iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 80
 
-echo "[+] Starting covert channel transparent proxy"
-python3 /opt/proxy/proxy.py
+# Start tcpdump in background
+TS=$(date +%Y%m%d_%H%M%S)
+tcpdump -U -i eth0 -w /captures/proxy_${TS}.pcap &
+
+
+echo "[+] Starting NFQUEUE-based transparent proxy"
+python3 /opt/proxy/proxy_NSQUEUE.py
