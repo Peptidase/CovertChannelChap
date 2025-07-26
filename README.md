@@ -1,17 +1,35 @@
 # Operation Phantom Nexus - Chameleonte
 
-The following repo contains the solution to the challenge problem  
+The following repository contains the solution to the challenge problem.
 
+## Covert Channel Overview
 
-## Network Emulation Guide
+This project implements a proof-of-concept covert channel using HTTP traffic. The channel leverages a transparent proxy positioned inline with network traffic to intercept Google search requests and responses. When the proxy detects a search request matching predefined trigger conditions, it modifies the server’s HTTP response in-flight and embeds an encoded message inside the `<DOCTYPE>` tag of the returned HTML page. The modified page is then delivered to the client without disrupting normal browsing behavior.
 
-In order to begin the network emulation you must have docker installed. The `network_emulation` contains a docker compose file which you must use `docker compose up` to start and `docker compose down` to stop. This will turn on several docker images which connect a DMZ network LAN to a router to another network share which acts as the internal enterprise network. 
-The docker compose file is essentially multiple dockerfiles container together. Following the `services:` section, we have the names of the different systems which we can see as the indented names `router`, `dmz_srv`, `internal_srv`. We can observe that under these services we have an `image:` flag. This is similar to what you could imagine an `iso` or `vbox` file for virtual box is but contains a state of the machine as well. It also isnt virtualised to the hardware and only on the operating system level. [`alpine`](https://hub.docker.com/_/alpine) is a super lightweight "iso" which just contains the bare minimum for a linux system to run (its 5MB lmao) which lets you install specifically what you want and then expand functionality on that. We can see in the different containers we all have `alpine` as the specific base image. We specify a name for the container. `priviledged` gives the machine access to sudo on the host machine which is required on the `router` container to be able to connect to the internet. We can also run commands when they start which we see with `router` when we specify `iptables` command to add the routing option to filter DMZ network traffic from other portions of the network. Lastly, **the `network:` tag within a container specifies how this container connects to that network. This means the address the container has in that network!** We can see the router container gives itself the `xxx.xxx.xxx.1` ip on both networks. 
-We can see something similar on the `dmz_srv` container which runs similar commands. We can also see we dont define an ip for this container on the `internal_net` meaning the only way to access this machine is on the `dmz_net`. This is how we define our network layout with these verbose definitions in the `networks:` section on each container.
-Finally, at the end of the file we see the network configurations occur. This is adding a custom docker network. The `driver:` detail just states how the network will communicate as a virtualised connection. We could make this more realistic by not having them be a bridge. Bridges are layer 3 virtualised connections so it can lose some flexability that a different driver type may have but that comes with increased overheads. 
+## Methods Used
 
+1. **Transparent HTTP Proxy**  
+   A custom proxy operates inline with outbound and inbound HTTP traffic. It inspects each request and response without requiring client-side configuration.
 
-## Covert Channel Ideas
+2. **Trigger Detection**  
+   The proxy monitors all HTTP requests to the Google domain. When a search request matches specific keywords or patterns, it flags the session for covert message injection.
 
-The following protocols have been observed within the network.
-1.  
+3. **Payload Injection**  
+   The proxy intercepts the corresponding HTTP response and parses the HTML. It encodes a covert message and embeds it within the `<DOCTYPE>` declaration. This approach avoids altering visible page content and minimizes detection risk.
+
+4. **Message Extraction**  
+   A separate decoding script reads the modified HTML, parses the `<DOCTYPE>` tag, and extracts the covert message. This can be run on the client side or by an operator collecting returned pages.
+
+5. **Traffic Camouflage**  
+   The covert channel hides within normal web browsing patterns, using HTTP’s ubiquity to blend with legitimate network traffic and avoid triggering simple anomaly-based detection.
+
+## Requirements
+
+- Python 3.10+
+- Docker For testing
+
+## Deliverables
+
+- Proof-of-concept code for the HTTP covert channel
+- README describing setup and operation
+- PCAP demonstrating message injection and extraction
