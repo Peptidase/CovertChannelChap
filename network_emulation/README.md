@@ -24,7 +24,6 @@ network\_emulation/
 ---
 
 ## 🚀 1. **Build and Start the Range**
-From inside the `network_emulation` directory:
 
 ```bash
 docker compose up --build
@@ -47,7 +46,6 @@ docker compose up -d
 This will use the cached images, starting the environment in seconds.
 
 ---
-
 ## 🌐 3. **Accessing the Client Desktop**
 
 ### noVNC (Browser-based)
@@ -59,7 +57,6 @@ This will use the cached images, starting the environment in seconds.
   ```
 
   On a local machine, use:
-
   ```
   http://localhost:6901
   ```
@@ -69,7 +66,6 @@ This will use the cached images, starting the environment in seconds.
   * Printed in the logs (`?password=...`), or
   * `vncpassword` if you set `VNC_PW` in `docker-compose.yml`.
 
-### VNC Client
 
 * Connect to:
 
@@ -80,26 +76,14 @@ This will use the cached images, starting the environment in seconds.
   with the same password.
 
 ---
-
-## 📡 4. **Networking**
-
 * The client routes all traffic through the proxy (`10.200.0.3`).
-* The proxy performs transparent forwarding and packet capture on both internal and external interfaces.
 
 ---
 
-## 📜 5. **Capturing Traffic**
-
-* All packet captures are saved in the `./captures` folder on the host.
 * The client and proxy each write timestamped `.pcap` files on startup.
-
 Example:
 
 ```
-captures/
-├── client_traffic_20250726_001200.pcap
-├── proxy_traffic_eth0_20250726_001200.pcap
-└── proxy_traffic_eth1_20250726_001200.pcap
 ```
 
 ---
@@ -111,7 +95,6 @@ captures/
 
   ```bash
   docker cp network_emulation-client-1:/path/to/file ./file
-  ```
 
 ---
 
@@ -128,7 +111,6 @@ To rebuild from scratch (including images):
 ```bash
 docker compose down -v --rmi all
 ```
-
 ---
 
 ## ✅ 8. **Quick Commands Cheat Sheet**
@@ -150,7 +132,6 @@ docker compose down -v --rmi all
   ```bash
   docker compose logs client
   docker compose logs proxy
-  ```
 
 * **Copy files:**
 
@@ -169,14 +150,9 @@ environment:
 ```
 
 Rebuild:
-
 ```bash
 docker compose up --build
 ```
-
-Now `password` is used instead of the auto-generated one.
-
-
 
 
 Would you also like me to include an **ASCII network diagram** showing `client → proxy → internet` inside this guide for clarity?
