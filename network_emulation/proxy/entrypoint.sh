@@ -25,4 +25,4 @@ tcpdump -U -i eth0 -w /captures/proxy_${TS}.pcap &
 
 
 echo "[+] Starting NFQUEUE-based transparent proxy"
-python3 /opt/proxy/proxy_NSQUEUE.py
+python3 /opt/proxy/proxy_NSQUEUE_chunked.py
