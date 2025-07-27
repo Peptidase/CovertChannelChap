@@ -28,7 +28,7 @@
     ```
 
 3. Run the client script:
-
+    
     ```bash
     cd /opt/client
     python3 client.py
