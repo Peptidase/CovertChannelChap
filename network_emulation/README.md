@@ -2,6 +2,18 @@
 
 ## Quick Start
 
+0. Ensure the correct file is selected in the entrypoint file for the proxt server.
+
+    Check `network_emulation/proxy/entrypoint.sh` for the last line.
+
+    The last line runs the proxy file.
+
+    ```
+    python3 /opt/proxy/proxy_NSQUEUE_chunked.py
+    
+    ```
+    This can be changed to a file located within the `python/covert_proxy/*.py` to start the other proxy server version. The difference is detailed within the `README.md` within the python directory.
+
 1. Build and start the environment:
 
     ```bash
